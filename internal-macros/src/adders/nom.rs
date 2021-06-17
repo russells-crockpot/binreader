@@ -25,7 +25,7 @@ make_add_macro! {
     type: ::nom::InputTake;
     body: {
         fn take(&self, count: usize) -> Self {
-            Self::from_slice(
+            Self::from_slice_with_offset(
                 ::nom::InputTake::take(&self.as_ref(), count),
                 self.initial_offset(),
                 self.endidness()
@@ -35,8 +35,9 @@ make_add_macro! {
         fn take_split(&self, count: usize) -> (Self, Self) {
             let (s1, s2) = ::nom::InputTake::take_split(&self.as_ref(), count);
             (
-                Self::from_slice(s1, self.initial_offset(), self.endidness()).unwrap(),
-                Self::from_slice(s2, self.initial_offset() + count, self.endidness()).unwrap()
+                Self::from_slice_with_offset(s1, self.initial_offset(), self.endidness()).unwrap(),
+                Self::from_slice_with_offset(s2, self.initial_offset() + count,
+                    self.endidness()).unwrap()
             )
         }
     }
