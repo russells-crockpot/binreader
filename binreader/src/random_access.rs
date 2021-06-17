@@ -30,8 +30,12 @@ impl AsRef<[u8]> for RandomAccessBinReader {
 
 impl<'r> BinReader<'r> for RandomAccessBinReader {
     #[inline]
-    fn from_slice(slice: &[u8], initial_offset: usize, endidness: Endidness) -> Result<Self> {
-        Self::from_bytes(Bytes::copy_from_slice(slice), initial_offset, endidness)
+    fn from_slice_with_offset(
+        slice: &[u8],
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self> {
+        Self::from_bytes_with_offset(Bytes::copy_from_slice(slice), initial_offset, endidness)
     }
 
     #[inline]
@@ -93,7 +97,7 @@ impl<'r> BinReader<'r> for RandomAccessBinReader {
 
 impl<'r> OwnableBinReader<'r> for RandomAccessBinReader {
     #[inline]
-    fn from_file<P: AsRef<Path>>(
+    fn from_file_with_offset<P: AsRef<Path>>(
         path: P,
         initial_offset: usize,
         endidness: Endidness,
@@ -102,7 +106,11 @@ impl<'r> OwnableBinReader<'r> for RandomAccessBinReader {
     }
 
     #[inline]
-    fn from_bytes(bytes: Bytes, initial_offset: usize, endidness: Endidness) -> Result<Self> {
+    fn from_bytes_with_offset(
+        bytes: Bytes,
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self> {
         Ok(Self::new(bytes, initial_offset, endidness))
     }
 }

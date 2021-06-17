@@ -31,7 +31,11 @@ impl<'r, 'o> BinReader<'o> for SliceRefReader<'r>
 where
     'o: 'r,
 {
-    fn from_slice(slice: &'o [u8], initial_offset: usize, endidness: Endidness) -> Result<Self> {
+    fn from_slice_with_offset(
+        slice: &'o [u8],
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self> {
         Ok(Self::new(slice, initial_offset, endidness))
     }
 
@@ -111,7 +115,11 @@ impl<R: AsRef<[u8]>> AsRef<[u8]> for SliceAsRefReader<R> {
 }
 
 impl<'r, R: AsRef<[u8]>> BinReader<'r> for SliceAsRefReader<R> {
-    fn from_slice(slice: &'r [u8], initial_offset: usize, endidness: Endidness) -> Result<Self> {
+    fn from_slice_with_offset(
+        slice: &'r [u8],
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self> {
         todo!();
     }
 

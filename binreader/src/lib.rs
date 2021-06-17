@@ -20,13 +20,13 @@ mod mmap;
 mod testing;
 
 mod consuming;
-mod ram;
+mod random_access;
 mod slice;
 
 pub use consuming::ConsumingBinReader;
 #[cfg(feature = "memmap")]
 pub use mmap::MmapBinReader;
-pub use ram::RandomAccessBinReader;
+pub use random_access::RandomAccessBinReader;
 pub use slice::{SliceAsRefReader, SliceRefReader};
 
 #[derive(Debug, Clone, Copy)]
@@ -75,7 +75,15 @@ pub trait BinReader<'r>
 where
     Self: Sized + AsRef<[u8]>,
 {
-    fn from_slice(slice: &'r [u8], initial_offset: usize, endidness: Endidness) -> Result<Self>;
+    fn from_slice_with_offset(
+        slice: &'r [u8],
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self>;
+
+    fn from_slice(slice: &'r [u8], endidness: Endidness) -> Result<Self> {
+        Self::from_slice_with_offset(slice, 0, endidness)
+    }
 
     fn size(&self) -> usize;
 
@@ -335,10 +343,23 @@ where
 }
 
 pub trait OwnableBinReader<'r>: BinReader<'r> {
-    fn from_file<P: AsRef<Path>>(
+    fn from_file_with_offset<P: AsRef<Path>>(
         path: P,
         initial_offset: usize,
         endidness: Endidness,
     ) -> Result<Self>;
-    fn from_bytes(bytes: Bytes, initial_offset: usize, endidness: Endidness) -> Result<Self>;
+
+    fn from_file<P: AsRef<Path>>(path: P, endidness: Endidness) -> Result<Self> {
+        Self::from_file_with_offset(path, 0, endidness)
+    }
+
+    fn from_bytes_with_offset(
+        bytes: Bytes,
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self>;
+
+    fn from_bytes(bytes: Bytes, endidness: Endidness) -> Result<Self> {
+        Self::from_bytes_with_offset(bytes, 0, endidness)
+    }
 }

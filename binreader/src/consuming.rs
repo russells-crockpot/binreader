@@ -109,13 +109,17 @@ impl<'r> BinReader<'r> for ConsumingBinReader {
         Ok(self.data.split_to(num_bytes))
     }
 
-    fn from_slice(slice: &'r [u8], initial_offset: usize, endidness: Endidness) -> Result<Self> {
-        Self::from_bytes(Bytes::copy_from_slice(slice), initial_offset, endidness)
+    fn from_slice_with_offset(
+        slice: &'r [u8],
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self> {
+        Self::from_bytes_with_offset(Bytes::copy_from_slice(slice), initial_offset, endidness)
     }
 }
 
 impl<'r> OwnableBinReader<'r> for ConsumingBinReader {
-    fn from_file<P: AsRef<Path>>(
+    fn from_file_with_offset<P: AsRef<Path>>(
         path: P,
         initial_offset: usize,
         endidness: Endidness,
@@ -123,7 +127,11 @@ impl<'r> OwnableBinReader<'r> for ConsumingBinReader {
         Ok(Self::new(bytes_from_file(path)?, initial_offset, endidness))
     }
 
-    fn from_bytes(bytes: Bytes, initial_offset: usize, endidness: Endidness) -> Result<Self> {
+    fn from_bytes_with_offset(
+        bytes: Bytes,
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self> {
         Ok(Self::new(bytes, initial_offset, endidness))
     }
 }

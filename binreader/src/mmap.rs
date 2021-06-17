@@ -97,7 +97,11 @@ impl<'r> BinReader<'r> for MmapBinReader {
         Ok(self.map[self.position - 1])
     }
 
-    fn from_slice(slice: &[u8], initial_offset: usize, endidness: Endidness) -> Result<Self> {
+    fn from_slice_with_offset(
+        slice: &[u8],
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self> {
         let mut mmap_mut = MmapMut::map_anon(slice.len())?;
         mmap_mut.copy_from_slice(slice);
         Ok(Self::new(
@@ -110,7 +114,7 @@ impl<'r> BinReader<'r> for MmapBinReader {
 }
 
 impl<'r> OwnableBinReader<'r> for MmapBinReader {
-    fn from_file<P: AsRef<Path>>(
+    fn from_file_with_offset<P: AsRef<Path>>(
         path: P,
         initial_offset: usize,
         endidness: Endidness,
@@ -121,8 +125,12 @@ impl<'r> OwnableBinReader<'r> for MmapBinReader {
         Ok(Self::new(initial_offset, mmap, endidness, Some(file)))
     }
 
-    fn from_bytes(bytes: Bytes, initial_offset: usize, endidness: Endidness) -> Result<Self> {
-        Self::from_slice(&bytes, initial_offset, endidness)
+    fn from_bytes_with_offset(
+        bytes: Bytes,
+        initial_offset: usize,
+        endidness: Endidness,
+    ) -> Result<Self> {
+        Self::from_slice_with_offset(&bytes, initial_offset, endidness)
     }
 }
 
