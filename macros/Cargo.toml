@@ -3,6 +3,10 @@ name = "binreader-macros"
 version = "0.1.0"
 authors = ["Brendan McGloin <stmonkeydoom@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "Proc macros used by/for binreader."
+homepage = "https://github.com/russells-crockpot/binreader"
+repository = "https://github.com/russells-crockpot/binreader"
 
 [lib]
 proc-macro = true

@@ -83,8 +83,8 @@ add_read! { SliceRefReader<'r>, 'r }
 add_borrow! { SliceRefReader<'r>, 'r }
 add_seek! { SliceRefReader<'r>, 'r }
 
-#[cfg(feature = "nom")]
-add_all_noms! { SliceRefReader<'r>, 'r }
+//#[cfg(feature = "nom")]
+//add_all_noms! { SliceRefReader<'r>, 'r }
 
 pub struct SliceAsRefReader<R: AsRef<[u8]>> {
     initial_offset: usize,

@@ -3,6 +3,10 @@ name = "binreader"
 version = "0.1.0"
 authors = ["Brendan McGloin <stmonkeydoom@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "A helper library to make reading binary data more pleasant."
+homepage = "https://github.com/russells-crockpot/binreader"
+repository = "https://github.com/russells-crockpot/binreader"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

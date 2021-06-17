@@ -3,6 +3,10 @@ name = "binreader-internal-macros"
 version = "0.1.0"
 authors = ["Brendan McGloin <stmonkeydoom@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "Internal macros used by binreader."
+homepage = "https://github.com/russells-crockpot/binreader"
+repository = "https://github.com/russells-crockpot/binreader"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
