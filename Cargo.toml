@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "binreader",
+    "internal-macros",
+    "macros",
+]
