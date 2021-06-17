@@ -1,13 +1,13 @@
 use crate::{BinReader, Endidness, Result};
 
-pub struct SliceRefReader<'r> {
+pub struct SliceRefBinReader<'r> {
     initial_offset: usize,
     position: usize,
     data: &'r [u8],
     endidness: Endidness,
 }
 
-impl<'r> SliceRefReader<'r> {
+impl<'r> SliceRefBinReader<'r> {
     #[inline]
     fn new(data: &'r [u8], initial_offset: usize, endidness: Endidness) -> Self {
         Self {
@@ -19,14 +19,14 @@ impl<'r> SliceRefReader<'r> {
     }
 }
 
-impl<'r> AsRef<[u8]> for SliceRefReader<'r> {
+impl<'r> AsRef<[u8]> for SliceRefBinReader<'r> {
     #[inline]
     fn as_ref(&self) -> &[u8] {
         self.data
     }
 }
 
-impl<'r, 'o> BinReader<'o> for SliceRefReader<'r>
+impl<'r, 'o> BinReader<'o> for SliceRefBinReader<'r>
 where
     'o: 'r,
 {
@@ -82,20 +82,20 @@ where
     }
 }
 
-add_read! { SliceRefReader<'r>, 'r }
-add_borrow! { SliceRefReader<'r>, 'r }
-add_seek! { SliceRefReader<'r>, 'r }
+add_read! { SliceRefBinReader<'r>, 'r }
+add_borrow! { SliceRefBinReader<'r>, 'r }
+add_seek! { SliceRefBinReader<'r>, 'r }
+add_bufread! { SliceRefBinReader<'r>, 'r }
 
 //#[cfg(feature = "nom")]
-//add_all_noms! { SliceRefReader<'r>, 'r }
-
-pub struct SliceAsRefReader<R: AsRef<[u8]>> {
+//add_all_noms! { SliceRefBinReader<'r>, 'r }
+pub struct SliceAsRefBinReader<R: AsRef<[u8]>> {
     initial_offset: usize,
     position: usize,
     data: R,
     endidness: Endidness,
 }
-impl<R: AsRef<[u8]>> SliceAsRefReader<R> {
+impl<R: AsRef<[u8]>> SliceAsRefBinReader<R> {
     #[inline]
     fn _new(data: R, initial_offset: usize, endidness: Endidness) -> Self {
         Self {
@@ -107,13 +107,13 @@ impl<R: AsRef<[u8]>> SliceAsRefReader<R> {
     }
 }
 
-impl<R: AsRef<[u8]>> AsRef<[u8]> for SliceAsRefReader<R> {
+impl<R: AsRef<[u8]>> AsRef<[u8]> for SliceAsRefBinReader<R> {
     fn as_ref(&self) -> &[u8] {
         self.data.as_ref()
     }
 }
 
-impl<'r, R: AsRef<[u8]>> BinReader<'r> for SliceAsRefReader<R> {
+impl<'r, R: AsRef<[u8]>> BinReader<'r> for SliceAsRefBinReader<R> {
     fn from_slice_with_offset(
         _slice: &'r [u8],
         _initial_offset: usize,
@@ -165,7 +165,6 @@ impl<'r, R: AsRef<[u8]>> BinReader<'r> for SliceAsRefReader<R> {
         Ok(self.data.as_ref()[self.position - 1])
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -173,16 +172,16 @@ mod tests {
 
     #[test]
     fn basic_ref_test() {
-        testing::basic_test_1::<SliceRefReader>();
+        testing::basic_test_1::<SliceRefBinReader>();
     }
 
     #[test]
     fn basic_le_ref_test() {
-        testing::basic_le_test::<SliceRefReader>();
+        testing::basic_le_test::<SliceRefBinReader>();
     }
 
     #[test]
     fn basic_be_ref_test() {
-        testing::basic_be_test::<SliceRefReader>();
+        testing::basic_be_test::<SliceRefBinReader>();
     }
 }

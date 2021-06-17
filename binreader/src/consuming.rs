@@ -138,6 +138,7 @@ impl<'r> OwnableBinReader<'r> for ConsumingBinReader {
 
 add_read! { ConsumingBinReader }
 add_borrow! { ConsumingBinReader }
+add_bufread! { ConsumingBinReader }
 
 #[cfg(feature = "nom")]
 add_all_noms! { ConsumingBinReader }

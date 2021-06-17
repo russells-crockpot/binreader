@@ -47,3 +47,27 @@ make_add_macro! {
         }
     }
 }
+
+make_add_macro! {
+    name: add_bufread;
+    type: ::std::io::BufRead;
+    body: {
+        fn fill_buf(&mut self) -> ::std::io::Result<&[u8]> {
+            if self.remaining() >= 4096 {
+                Ok(self.subseq(self.current_offset(), 4096)?)
+            } else {
+                Ok(self.subseq(self.current_offset(), self.remaining())?)
+            }
+        }
+
+        fn consume(&mut self, amt: usize) {
+            if !self.is_empty() {
+                if self.remaining() < amt {
+                    self.advance_by(self.remaining()).unwrap();
+                } else {
+                    self.advance_by(amt).unwrap();
+                }
+            }
+        }
+    }
+}

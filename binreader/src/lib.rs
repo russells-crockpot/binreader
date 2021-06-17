@@ -28,8 +28,8 @@ pub use consuming::ConsumingBinReader;
 #[cfg(feature = "memmap")]
 pub use mmap::MmapBinReader;
 pub use random_access::RandomAccessBinReader;
-pub use slice::SliceRefReader;
-//pub use slice::{SliceAsRefReader, SliceRefReader};
+pub use slice::SliceRefBinReader;
+//pub use slice::{SliceAsRefBinReader, SliceRefBinReader};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Endidness {

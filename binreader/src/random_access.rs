@@ -118,6 +118,7 @@ impl<'r> OwnableBinReader<'r> for RandomAccessBinReader {
 add_read! { RandomAccessBinReader }
 add_borrow! { RandomAccessBinReader }
 add_seek! { RandomAccessBinReader }
+add_bufread! { RandomAccessBinReader }
 
 #[cfg(feature = "nom")]
 add_all_noms! { RandomAccessBinReader }

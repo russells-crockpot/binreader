@@ -137,6 +137,7 @@ impl<'r> OwnableBinReader<'r> for MmapBinReader {
 add_read! { MmapBinReader }
 add_borrow! { MmapBinReader }
 add_seek! { MmapBinReader }
+add_bufread! { MmapBinReader }
 
 #[cfg(feature = "nom")]
 add_all_noms! { MmapBinReader }
