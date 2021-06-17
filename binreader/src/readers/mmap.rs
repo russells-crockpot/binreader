@@ -1,12 +1,12 @@
-use crate::{BinReader, Endidness, OwnableBinReader, Result};
+use crate::{BinReader, Endidness, OwnableBinReader, Result, SliceableReader};
 use bytes::Bytes;
 use fs3::FileExt as _;
 use memmap2::{Mmap, MmapMut};
-use std::{fs::File, path::Path};
+use std::{cell::Cell, fs::File, path::Path};
 
 pub struct MmapBinReader {
     initial_offset: usize,
-    position: usize,
+    position: Cell<usize>,
     map: Mmap,
     endidness: Endidness,
     maybe_mapped_file: Option<File>,
@@ -21,11 +21,16 @@ impl MmapBinReader {
     ) -> Self {
         Self {
             initial_offset,
-            position: 0,
+            position: Cell::new(0),
             map,
             endidness,
             maybe_mapped_file,
         }
+    }
+
+    fn inc_pos(&self, amt: usize) {
+        let tmp = self.position.get();
+        self.position.replace(tmp + amt);
     }
 }
 
@@ -56,12 +61,12 @@ impl<'r> BinReader<'r> for MmapBinReader {
 
     #[inline]
     fn remaining(&self) -> usize {
-        self.size() - self.position
+        self.size() - self.position.get()
     }
 
     #[inline]
     fn current_offset(&self) -> usize {
-        self.initial_offset + self.position
+        self.initial_offset + self.position.get()
     }
 
     #[inline]
@@ -74,15 +79,15 @@ impl<'r> BinReader<'r> for MmapBinReader {
         self.initial_offset
     }
 
-    fn advance_to(&mut self, offset: usize) -> Result<()> {
+    fn advance_to(&self, offset: usize) -> Result<()> {
         self.validate_offset(offset, 0)?;
-        self.position = offset - self.initial_offset;
+        self.position.replace(offset - self.initial_offset);
         Ok(())
     }
 
-    fn advance_by(&mut self, bytes: usize) -> Result<()> {
+    fn advance_by(&self, bytes: usize) -> Result<()> {
         self.validate_offset(self.current_offset() + bytes, 0)?;
-        self.position += bytes;
+        self.inc_pos(bytes);
         Ok(())
     }
 
@@ -91,10 +96,10 @@ impl<'r> BinReader<'r> for MmapBinReader {
         Ok(self.map[offset - self.initial_offset])
     }
 
-    fn next_u8(&mut self) -> Result<u8> {
+    fn next_u8(&self) -> Result<u8> {
         self.validate_offset(self.current_offset(), 1)?;
-        self.position += 1;
-        Ok(self.map[self.position - 1])
+        self.inc_pos(1);
+        Ok(self.map[self.position.get() - 1])
     }
 
     fn from_slice_with_offset(
@@ -133,6 +138,8 @@ impl<'r> OwnableBinReader<'r> for MmapBinReader {
         Self::from_slice_with_offset(&bytes, initial_offset, endidness)
     }
 }
+
+impl<'r> SliceableReader<'r> for MmapBinReader {}
 
 add_read! { MmapBinReader }
 add_borrow! { MmapBinReader }

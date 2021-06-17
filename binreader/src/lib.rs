@@ -14,22 +14,11 @@ pub mod util;
 #[macro_use]
 extern crate binreader_internal_macros;
 
-#[cfg(feature = "memmap")]
-mod mmap;
+mod readers;
+pub use readers::*;
 
 #[cfg(test)]
 mod testing;
-
-mod consuming;
-mod random_access;
-mod slice;
-
-pub use consuming::ConsumingBinReader;
-#[cfg(feature = "memmap")]
-pub use mmap::MmapBinReader;
-pub use random_access::RandomAccessBinReader;
-pub use slice::SliceRefBinReader;
-//pub use slice::{SliceAsRefBinReader, SliceRefBinReader};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Endidness {
@@ -95,17 +84,17 @@ where
 
     fn endidness(&self) -> Endidness;
 
-    fn advance_to(&mut self, offset: usize) -> Result<()>;
+    fn advance_to(&self, offset: usize) -> Result<()>;
 
-    fn advance_by(&mut self, num_bytes: usize) -> Result<()>;
+    fn advance_by(&self, num_bytes: usize) -> Result<()>;
 
-    fn next_u8(&mut self) -> Result<u8> {
+    fn next_u8(&self) -> Result<u8> {
         let byte = self.current_byte()?;
         self.advance_by(1)?;
         Ok(byte)
     }
 
-    fn next_n_bytes(&mut self, num_bytes: usize) -> Result<Bytes> {
+    fn next_n_bytes(&self, num_bytes: usize) -> Result<Bytes> {
         self.validate_offset(self.current_offset(), num_bytes)?;
         let start = self.current_offset() + self.initial_offset();
         let data = Bytes::copy_from_slice(&self.as_ref()[start..start + num_bytes]);
@@ -177,7 +166,7 @@ where
         Ok(&self.as_ref()[start..end])
     }
 
-    fn next_bytes(&mut self, buf: &mut [u8]) -> Result<()> {
+    fn next_bytes(&self, buf: &mut [u8]) -> Result<()> {
         for i in 0..buf.len() {
             buf[i] = self.next_u8()?;
         }
@@ -265,21 +254,21 @@ where
         }
     }
 
-    fn next_i8(&mut self) -> Result<i8> {
+    fn next_i8(&self) -> Result<i8> {
         let mut buf = [0; 1];
         self.next_bytes(&mut buf)?;
         Ok(i8::from_be_bytes(buf))
     }
 
     make_number_methods! {
-        fn next_numname_numend(&mut self) -> Result<_numname_> {
+        fn next_numname_numend(&self) -> Result<_numname_> {
             let mut buf = [0; _numwidth_];
             self.next_bytes(&mut buf)?;
             Ok(_numname_::from_numend_bytes(buf))
         }
     }
 
-    fn next_u16(&mut self) -> Result<u16> {
+    fn next_u16(&self) -> Result<u16> {
         match self.endidness() {
             Endidness::Big => self.next_u16_be(),
             Endidness::Little => self.next_u16_le(),
@@ -287,7 +276,7 @@ where
         }
     }
 
-    fn next_u32(&mut self) -> Result<u32> {
+    fn next_u32(&self) -> Result<u32> {
         match self.endidness() {
             Endidness::Big => self.next_u32_be(),
             Endidness::Little => self.next_u32_le(),
@@ -295,7 +284,7 @@ where
         }
     }
 
-    fn next_u64(&mut self) -> Result<u64> {
+    fn next_u64(&self) -> Result<u64> {
         match self.endidness() {
             Endidness::Big => self.next_u64_be(),
             Endidness::Little => self.next_u64_le(),
@@ -303,7 +292,7 @@ where
         }
     }
 
-    fn next_u128(&mut self) -> Result<u128> {
+    fn next_u128(&self) -> Result<u128> {
         match self.endidness() {
             Endidness::Big => self.next_u128_be(),
             Endidness::Little => self.next_u128_le(),
@@ -311,7 +300,7 @@ where
         }
     }
 
-    fn next_i16(&mut self) -> Result<i16> {
+    fn next_i16(&self) -> Result<i16> {
         match self.endidness() {
             Endidness::Big => self.next_i16_be(),
             Endidness::Little => self.next_i16_le(),
@@ -319,7 +308,7 @@ where
         }
     }
 
-    fn next_i32(&mut self) -> Result<i32> {
+    fn next_i32(&self) -> Result<i32> {
         match self.endidness() {
             Endidness::Big => self.next_i32_be(),
             Endidness::Little => self.next_i32_le(),
@@ -327,7 +316,7 @@ where
         }
     }
 
-    fn next_i64(&mut self) -> Result<i64> {
+    fn next_i64(&self) -> Result<i64> {
         match self.endidness() {
             Endidness::Big => self.next_i64_be(),
             Endidness::Little => self.next_i64_le(),
@@ -335,7 +324,7 @@ where
         }
     }
 
-    fn next_i128(&mut self) -> Result<i128> {
+    fn next_i128(&self) -> Result<i128> {
         match self.endidness() {
             Endidness::Big => self.next_i128_be(),
             Endidness::Little => self.next_i128_le(),

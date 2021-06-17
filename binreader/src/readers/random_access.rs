@@ -1,10 +1,12 @@
-use crate::{util::bytes_from_file, BinReader, Endidness, OwnableBinReader, Result};
+use crate::{
+    util::bytes_from_file, BinReader, Endidness, OwnableBinReader, Result, SliceableReader,
+};
 use bytes::Bytes;
-use std::path::Path;
+use std::{cell::Cell, path::Path};
 
 pub struct RandomAccessBinReader {
     initial_offset: usize,
-    position: usize,
+    position: Cell<usize>,
     data: Bytes,
     endidness: Endidness,
 }
@@ -14,10 +16,15 @@ impl RandomAccessBinReader {
     fn new(data: Bytes, initial_offset: usize, endidness: Endidness) -> Self {
         Self {
             initial_offset,
-            position: 0,
+            position: Cell::new(0),
             data,
             endidness,
         }
+    }
+
+    fn inc_pos(&self, amt: usize) {
+        let tmp = self.position.get();
+        self.position.replace(tmp + amt);
     }
 }
 
@@ -55,12 +62,12 @@ impl<'r> BinReader<'r> for RandomAccessBinReader {
 
     #[inline]
     fn remaining(&self) -> usize {
-        self.size() - self.position
+        self.size() - self.position.get()
     }
 
     #[inline]
     fn current_offset(&self) -> usize {
-        self.position + self.initial_offset
+        self.position.get() + self.initial_offset
     }
 
     #[inline]
@@ -68,27 +75,27 @@ impl<'r> BinReader<'r> for RandomAccessBinReader {
         self.endidness
     }
 
-    fn advance_to(&mut self, offset: usize) -> Result<()> {
+    fn advance_to(&self, offset: usize) -> Result<()> {
         self.validate_offset(offset, 0)?;
-        self.position = offset;
+        self.position.replace(offset);
         Ok(())
     }
 
-    fn advance_by(&mut self, bytes: usize) -> Result<()> {
+    fn advance_by(&self, bytes: usize) -> Result<()> {
         self.validate_offset(self.current_offset() + bytes, 0)?;
-        self.position += bytes;
+        self.inc_pos(bytes);
         Ok(())
     }
 
-    fn next_u8(&mut self) -> Result<u8> {
+    fn next_u8(&self) -> Result<u8> {
         self.validate_offset(self.current_offset(), 1)?;
-        self.position += 1;
-        Ok(self.data.as_ref()[self.position - 1])
+        self.inc_pos(1);
+        Ok(self.data.as_ref()[self.position.get() - 1])
     }
 
-    fn next_n_bytes(&mut self, num_bytes: usize) -> Result<Bytes> {
+    fn next_n_bytes(&self, num_bytes: usize) -> Result<Bytes> {
         self.validate_offset(self.current_offset(), num_bytes)?;
-        self.position += num_bytes;
+        self.inc_pos(num_bytes);
         Ok(self
             .data
             .slice(self.current_offset()..self.current_offset() + num_bytes))
@@ -114,6 +121,8 @@ impl<'r> OwnableBinReader<'r> for RandomAccessBinReader {
         Ok(Self::new(bytes, initial_offset, endidness))
     }
 }
+
+impl<'r> SliceableReader<'r> for RandomAccessBinReader {}
 
 add_read! { RandomAccessBinReader }
 add_borrow! { RandomAccessBinReader }
