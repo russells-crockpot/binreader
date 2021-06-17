@@ -20,6 +20,20 @@ impl Endidness {
             Self::Native => "ne",
         }
     }
+    fn long(&self) -> &str {
+        match self {
+            Self::Big => "big",
+            Self::Little => "little",
+            Self::Native => "native",
+        }
+    }
+    fn title(&self) -> &str {
+        match self {
+            Self::Big => "Big",
+            Self::Little => "Little",
+            Self::Native => "Native",
+        }
+    }
 }
 
 struct NumberInfo {
@@ -59,6 +73,10 @@ impl NumberInfo {
                     self.ident()
                 } else if ident_str == "_numwidth_" {
                     self.width()
+                } else if ident_str == "_numendlong_" {
+                    TokenTree::Ident(PmIdent::new(endidness.long(), Span::call_site()))
+                } else if ident_str == "_numendtitle_" {
+                    TokenTree::Ident(PmIdent::new(endidness.title(), Span::call_site()))
                 } else {
                     TokenTree::Ident(PmIdent::new(
                         &ident_str

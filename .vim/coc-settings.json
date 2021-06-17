@@ -3,6 +3,8 @@
     "Unownable",
     "cpus",
     "numend",
+    "numendlong",
+    "numendtitle",
     "numname",
     "numwidth",
     "sstr",
