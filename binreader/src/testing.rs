@@ -21,7 +21,7 @@ const LE_U128_DATA: u128 = 0x0f0e0d0c0b0a09080706050403020100;
 const BE_U128_DATA: u128 = 0x000102030405060708090a0b0c0d0e0f;
 
 pub(crate) fn basic_test_1<'r, B: BinReader<'r>>() {
-    let mut data = B::from_slice(&TEST_DATA, 0, Endidness::Unknown).unwrap();
+    let mut data = B::from_slice_with_offset(&TEST_DATA, 0, Endidness::Unknown).unwrap();
     assert_eq!(data.current_offset(), 0);
     assert_eq!(data.size(), TEST_DATA.len());
     assert_eq!(data.upper_offset_limit(), TEST_DATA.len());
@@ -35,7 +35,7 @@ pub(crate) fn basic_test_1<'r, B: BinReader<'r>>() {
         assert_eq!(data.remaining(), TEST_DATA.len() - i);
         assert_eq!(i as u8, data.next_u8().unwrap());
     }
-    data = B::from_slice(&TEST_DATA, 5, Endidness::Unknown).unwrap();
+    data = B::from_slice_with_offset(&TEST_DATA, 5, Endidness::Unknown).unwrap();
     assert_eq!(data.current_offset(), 5);
     assert_eq!(data.size(), TEST_DATA.len());
     assert_eq!(data.upper_offset_limit(), TEST_DATA.len() + 5);
@@ -52,35 +52,35 @@ pub(crate) fn basic_test_1<'r, B: BinReader<'r>>() {
 }
 
 pub(crate) fn basic_le_test<'r, B: BinReader<'r>>() {
-    let mut data = B::from_slice(&TEST_DATA, 0, Endidness::Little).unwrap();
+    let mut data = B::from_slice_with_offset(&TEST_DATA, 0, Endidness::Little).unwrap();
     for num in LE_U16_DATA.iter() {
         assert_eq!(*num, data.next_u16().unwrap());
     }
-    data = B::from_slice(&TEST_DATA, 0, Endidness::Little).unwrap();
+    data = B::from_slice_with_offset(&TEST_DATA, 0, Endidness::Little).unwrap();
     for num in LE_U32_DATA.iter() {
         assert_eq!(*num, data.next_u32().unwrap());
     }
-    data = B::from_slice(&TEST_DATA, 0, Endidness::Little).unwrap();
+    data = B::from_slice_with_offset(&TEST_DATA, 0, Endidness::Little).unwrap();
     for num in LE_U64_DATA.iter() {
         assert_eq!(*num, data.next_u64().unwrap());
     }
-    data = B::from_slice(&TEST_DATA, 0, Endidness::Little).unwrap();
+    data = B::from_slice_with_offset(&TEST_DATA, 0, Endidness::Little).unwrap();
     assert_eq!(LE_U128_DATA, data.next_u128().unwrap());
 }
 
 pub(crate) fn basic_be_test<'r, B: BinReader<'r>>() {
-    let mut data = B::from_slice(&TEST_DATA, 0, Endidness::Big).unwrap();
+    let mut data = B::from_slice_with_offset(&TEST_DATA, 0, Endidness::Big).unwrap();
     for num in BE_U16_DATA.iter() {
         assert_eq!(*num, data.next_u16().unwrap());
     }
-    data = B::from_slice(&TEST_DATA, 0, Endidness::Big).unwrap();
+    data = B::from_slice_with_offset(&TEST_DATA, 0, Endidness::Big).unwrap();
     for num in BE_U32_DATA.iter() {
         assert_eq!(*num, data.next_u32().unwrap());
     }
-    data = B::from_slice(&TEST_DATA, 0, Endidness::Big).unwrap();
+    data = B::from_slice_with_offset(&TEST_DATA, 0, Endidness::Big).unwrap();
     for num in BE_U64_DATA.iter() {
         assert_eq!(*num, data.next_u64().unwrap());
     }
-    data = B::from_slice(&TEST_DATA, 0, Endidness::Big).unwrap();
+    data = B::from_slice_with_offset(&TEST_DATA, 0, Endidness::Big).unwrap();
     assert_eq!(BE_U128_DATA, data.next_u128().unwrap());
 }

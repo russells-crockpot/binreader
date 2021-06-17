@@ -1,6 +1,6 @@
-use crate::{util::bytes_from_file, BinReader, Endidness, Error, OwnableBinReader, Result};
+use crate::{util::bytes_from_file, BinReader, Endidness, OwnableBinReader, Result};
 use bytes::Bytes;
-use std::{borrow::Borrow, io, path::Path};
+use std::path::Path;
 
 pub struct RandomAccessBinReader {
     initial_offset: usize,

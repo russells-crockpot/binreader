@@ -1,7 +1,7 @@
 use crate::{util::bytes_from_file, BinReader, Endidness, Error, OwnableBinReader, Result};
 
 use bytes::{Buf as _, Bytes};
-use std::{borrow::Borrow, io, path::Path};
+use std::path::Path;
 
 pub struct ConsumingBinReader {
     initial_offset: usize,

@@ -1,5 +1,5 @@
 use bytes::{BufMut as _, Bytes, BytesMut};
-use std::{fs, io, marker::PhantomData, path::Path};
+use std::{fs, io, path::Path};
 
 pub fn bytes_from_file<P: AsRef<Path>>(path: P) -> io::Result<Bytes> {
     let capacity = fs::metadata(&path)?.len();

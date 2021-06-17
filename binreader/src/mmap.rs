@@ -1,8 +1,8 @@
-use crate::{util::bytes_from_file, BinReader, Endidness, Error, OwnableBinReader, Result};
+use crate::{BinReader, Endidness, OwnableBinReader, Result};
 use bytes::Bytes;
 use fs3::FileExt as _;
 use memmap2::{Mmap, MmapMut};
-use std::{borrow::Borrow, fs::File, io, path::Path};
+use std::{fs::File, path::Path};
 
 pub struct MmapBinReader {
     initial_offset: usize,

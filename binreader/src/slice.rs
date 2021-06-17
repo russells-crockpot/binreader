@@ -1,5 +1,4 @@
-use crate::{util::bytes_from_file, BinReader, Endidness, Error, OwnableBinReader, Result};
-use std::{borrow::Borrow, fs::File, io, path::Path};
+use crate::{BinReader, Endidness, Result};
 
 pub struct SliceRefReader<'r> {
     initial_offset: usize,
@@ -98,7 +97,7 @@ pub struct SliceAsRefReader<R: AsRef<[u8]>> {
 }
 impl<R: AsRef<[u8]>> SliceAsRefReader<R> {
     #[inline]
-    fn new(data: R, initial_offset: usize, endidness: Endidness) -> Self {
+    fn _new(data: R, initial_offset: usize, endidness: Endidness) -> Self {
         Self {
             initial_offset,
             position: 0,
@@ -116,9 +115,9 @@ impl<R: AsRef<[u8]>> AsRef<[u8]> for SliceAsRefReader<R> {
 
 impl<'r, R: AsRef<[u8]>> BinReader<'r> for SliceAsRefReader<R> {
     fn from_slice_with_offset(
-        slice: &'r [u8],
-        initial_offset: usize,
-        endidness: Endidness,
+        _slice: &'r [u8],
+        _initial_offset: usize,
+        _endidness: Endidness,
     ) -> Result<Self> {
         todo!();
     }

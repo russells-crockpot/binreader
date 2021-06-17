@@ -1,4 +1,4 @@
-use crate::{BinReader, Endidness, OwnableBinReader};
+use crate::{BinReader, Endidness};
 use std::marker::PhantomData;
 
 pub struct BorrowedBinReaderIter<'a, 'r, B>

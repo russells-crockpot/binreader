@@ -1,13 +1,14 @@
-#![allow(unused_imports, dead_code, unused_variables, unused_mut)]
+//#![allow(unused_imports, dead_code, unused_variables, unused_mut)]
 #![allow(clippy::needless_range_loop)]
-use binreader_macros::{impl_at_methods, impl_next_methods, make_number_methods};
+use binreader_macros::make_number_methods;
 use bytes::Bytes;
-use std::{borrow::Borrow, io, path::Path};
+use std::{io, path::Path};
 
 // Needed for some macros to work in this package.
+#[allow(unused_imports)]
 use crate as binreader;
 
-pub mod iter;
+//pub mod iter;
 pub mod util;
 
 #[macro_use]
@@ -27,7 +28,8 @@ pub use consuming::ConsumingBinReader;
 #[cfg(feature = "memmap")]
 pub use mmap::MmapBinReader;
 pub use random_access::RandomAccessBinReader;
-pub use slice::{SliceAsRefReader, SliceRefReader};
+pub use slice::SliceRefReader;
+//pub use slice::{SliceAsRefReader, SliceRefReader};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Endidness {

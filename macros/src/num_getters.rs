@@ -2,8 +2,8 @@
 use proc_macro2::{
     Group as PmGroup, Ident as PmIdent, Literal as PmLiteral, Span, TokenStream, TokenTree,
 };
-use quote::{quote, TokenStreamExt as _};
-use syn::{Expr, Ident, Stmt, Token};
+use quote::quote;
+use syn::Ident;
 
 #[derive(Clone, Copy)]
 pub enum Endidness {

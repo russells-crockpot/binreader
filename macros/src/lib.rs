@@ -1,4 +1,3 @@
-#![allow(unused_imports, dead_code, unused_variables, unused_mut)]
 use proc_macro::TokenStream;
 
 #[macro_use]
