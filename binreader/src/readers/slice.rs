@@ -1,6 +1,7 @@
 use crate::{BinReader, Endidness, Result};
 use std::cell::Cell;
 
+/// A [`SliceRefBinReader`]
 pub struct SliceRefBinReader<'r> {
     initial_offset: usize,
     position: Cell<usize>,
@@ -19,9 +20,9 @@ impl<'r> SliceRefBinReader<'r> {
         }
     }
 
-    fn inc_pos(&self, amt: usize) {
-        let tmp = self.position.get();
-        self.position.replace(tmp + amt);
+    fn adj_pos(&self, amt: isize) {
+        let tmp = self.position.get() as isize;
+        self.position.replace((tmp + amt) as usize);
     }
 }
 
@@ -75,27 +76,27 @@ where
         Ok(())
     }
 
-    fn advance_by(&self, num_bytes: usize) -> Result<()> {
-        self.validate_offset(self.position.get() + num_bytes, 0)?;
-        self.inc_pos(num_bytes);
+    fn advance_by(&self, num_bytes: isize) -> Result<()> {
+        self.validate_offset((self.position.get() as isize + num_bytes) as usize, 0)?;
+        self.adj_pos(num_bytes);
         Ok(())
     }
 
     fn next_u8(&self) -> Result<u8> {
         self.validate_offset(self.current_offset(), 1)?;
-        self.inc_pos(1);
+        self.adj_pos(1);
         Ok(self.data[self.position.get() - 1])
     }
 }
 
-impl<'r> SliceableReader<'r> for SliceRefBinReader<'r> {}
+impl<'r> SliceableBinReader<'r> for SliceRefBinReader<'r> {}
 
 add_read! { SliceRefBinReader<'r>, 'r }
 add_borrow! { SliceRefBinReader<'r>, 'r }
 add_seek! { SliceRefBinReader<'r>, 'r }
 add_bufread! { SliceRefBinReader<'r>, 'r }
 
-pub trait SliceableReader<'r>: BinReader<'r> {
+pub trait SliceableBinReader<'r>: BinReader<'r> {
     #[inline]
     fn slice_reader(&self, start: usize, end: usize) -> Result<SliceRefBinReader> {
         SliceRefBinReader::from_slice(self.range(start, end)?, self.endidness())

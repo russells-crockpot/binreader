@@ -3,7 +3,7 @@ use proc_macro2::{
     Group as PmGroup, Ident as PmIdent, Literal as PmLiteral, Span, TokenStream, TokenTree,
 };
 use quote::quote;
-use syn::Ident;
+use syn::{Ident, Lit};
 
 #[derive(Clone, Copy)]
 pub enum Endidness {
@@ -61,6 +61,15 @@ impl NumberInfo {
             .collect()
     }
 
+    fn alter_str(&self, value: &str, endidness: Endidness) -> String {
+        value
+            .replace("numend", endidness.short())
+            .replace("numname", self.ident)
+            .replace("numwidth", &self.width.to_string())
+            .replace("numendlong", endidness.long())
+            .replace("numendtitle", endidness.title())
+    }
+
     fn apply_to_tree(&self, tree: TokenTree, endidness: Endidness) -> TokenTree {
         match tree {
             TokenTree::Group(group) => TokenTree::Group(PmGroup::new(
@@ -79,14 +88,17 @@ impl NumberInfo {
                     TokenTree::Ident(PmIdent::new(endidness.title(), Span::call_site()))
                 } else {
                     TokenTree::Ident(PmIdent::new(
-                        &ident_str
-                            .replace("numend", endidness.short())
-                            .replace("numname", self.ident)
-                            .replace("numwidth", &self.width.to_string()),
+                        &self.alter_str(&ident_str, endidness),
                         ident.span(),
                     ))
                 }
             }
+            TokenTree::Literal(lit) => match Lit::new(lit.clone()) {
+                Lit::Str(s) => {
+                    TokenTree::Literal(PmLiteral::string(&self.alter_str(&s.value(), endidness)))
+                }
+                _ => TokenTree::Literal(lit),
+            },
             _ => tree,
         }
     }

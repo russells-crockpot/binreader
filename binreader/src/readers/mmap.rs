@@ -1,4 +1,4 @@
-use crate::{BinReader, Endidness, OwnableBinReader, Result, SliceableReader};
+use crate::{BinReader, Endidness, OwnableBinReader, Result, SliceableBinReader};
 use bytes::Bytes;
 use fs3::FileExt as _;
 use memmap2::{Mmap, MmapMut};
@@ -28,9 +28,9 @@ impl MmapBinReader {
         }
     }
 
-    fn inc_pos(&self, amt: usize) {
-        let tmp = self.position.get();
-        self.position.replace(tmp + amt);
+    fn adj_pos(&self, amt: isize) {
+        let tmp = self.position.get() as isize;
+        self.position.replace((tmp + amt) as usize);
     }
 }
 
@@ -85,9 +85,9 @@ impl<'r> BinReader<'r> for MmapBinReader {
         Ok(())
     }
 
-    fn advance_by(&self, bytes: usize) -> Result<()> {
-        self.validate_offset(self.current_offset() + bytes, 0)?;
-        self.inc_pos(bytes);
+    fn advance_by(&self, bytes: isize) -> Result<()> {
+        self.validate_offset((self.position.get() as isize + bytes) as usize, 0)?;
+        self.adj_pos(bytes);
         Ok(())
     }
 
@@ -98,7 +98,7 @@ impl<'r> BinReader<'r> for MmapBinReader {
 
     fn next_u8(&self) -> Result<u8> {
         self.validate_offset(self.current_offset(), 1)?;
-        self.inc_pos(1);
+        self.adj_pos(1);
         Ok(self.map[self.position.get() - 1])
     }
 
@@ -139,7 +139,7 @@ impl<'r> OwnableBinReader<'r> for MmapBinReader {
     }
 }
 
-impl<'r> SliceableReader<'r> for MmapBinReader {}
+impl<'r> SliceableBinReader<'r> for MmapBinReader {}
 
 add_read! { MmapBinReader }
 add_borrow! { MmapBinReader }

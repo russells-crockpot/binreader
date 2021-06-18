@@ -63,9 +63,9 @@ make_add_macro! {
         fn consume(&mut self, amt: usize) {
             if !self.is_empty() {
                 if self.remaining() < amt {
-                    self.advance_by(self.remaining()).unwrap();
+                    self.advance_by(self.remaining() as isize).unwrap();
                 } else {
-                    self.advance_by(amt).unwrap();
+                    self.advance_by(amt as isize).unwrap();
                 }
             }
         }

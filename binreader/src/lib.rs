@@ -1,4 +1,25 @@
-//#![allow(unused_imports, dead_code, unused_variables, unused_mut)]
+//! Helpers to read binary data files in rust
+//!
+//! # Overview
+//!
+//! The binreader crate is designed to make reading binary data easier. It is not
+//! meant to replace other wonderful crates like
+//! [bytes](https://github.com/tokio-rs/bytes),
+//! [nom](https://github.com/Geal/nom) or [binread](https://github.com/jam1garner/binread),
+//! but instead is meant to work with them as a single, common interface between.
+//!
+//! This is primarily done via the [`BinReader`] trait, as well as a variety of different
+//! implementations of it useful for a variety of purposes.
+//!
+//! # Feature Flags
+//!
+//! As of right now, BinReader only has two feature flags:
+//!
+//! - `nom-support` which allows [nom](https://github.com/Geal/nom) to parse from
+//!   BinReaders.
+//! - `memmap` which supports platform-independent memory mapped files (via the
+//!   [memmap2](https://github.com/RazrFalcon/memmap2-rs) crate).
+
 #![allow(clippy::needless_range_loop)]
 use binreader_macros::make_number_methods;
 use bytes::Bytes;
@@ -62,66 +83,129 @@ impl From<io::Error> for Error {
 
 pub type Result<V> = std::result::Result<V, Error>;
 
+/// The primary trait of this crate; a [`BinReader`] is designed to be a common interface between
+/// your program and binary data.
+///
+/// While not required, most [`BinReader`]s should implement the [`std::io::Read`],
+/// [`std::io::Seek`], [`std::io::BufRead`], and ``std::borrow::Borrow<&[u8]>`` traits.
+///
+/// Additionally, there are two sub-traits of [`BinReader`]:
+///
+/// - [`OwnableBinReader`] which owns the data contained within it.
+/// - [`SliceableBinReader`] which allows you to easily create [`SliceRefBinReader`]s from another
+///   reader.
+///
+/// # Offsets
+///
+/// Instead of indexes, [`BinReader`]s use offsets. Now, in most cases these are probably going to
+/// be the same. However, you can specify an initial offset that will essentially change the index
+/// of zero to whatever the initial_offset is.
+/// For example:
+///
+/// ```
+/// let test_data = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05];
+/// let reader = RandomAccessBinReader::from_slice_with_offset(&test_data, 100, Endidness::Big);
+/// assert_eq!(reader.u8_at(100).unwrap(), 0);
+/// ```
+///
+/// ## Validation
+///
+/// One thing you may have noticed is that we had to unwrap the value. Most of a [`BinReader`]'s
+/// methods first check to make sure the provided offset is valid. For example:
+///
+/// ```
+/// assert!(matches!(reader.u8_at(99), Err(Error::OffsetTooSmall(99))));
+/// ```
+///
+/// ## Limits
+///
+/// The lower and upper limits of valid offsets can be retrieved via the
+/// [`BinReader::lower_offset_limit`] and [`BinReader::upper_offset_limit`] methods respectively.
+///
+/// An important note: the [BinReader::size] method returns how much *data* is in the reader, not
+/// what the highest valid offset is.
 pub trait BinReader<'r>
 where
     Self: Sized + AsRef<[u8]>,
 {
+    /// Generates a new [`BinReader`] using the provided slice, initial offset, and endidness. While
+    /// the exact implementation of this varies from implementation to implementation,
+    /// [`OwnableBinReader`]s will, more than likely, copy the data in the slice.
     fn from_slice_with_offset(
         slice: &'r [u8],
         initial_offset: usize,
         endidness: Endidness,
     ) -> Result<Self>;
 
+    /// Functions the same as the [`BinReader::from_slice_with_offset`], except the initial offset
+    /// is always `0`.
     fn from_slice(slice: &'r [u8], endidness: Endidness) -> Result<Self> {
         Self::from_slice_with_offset(slice, 0, endidness)
     }
 
+    /// The amount of data in the reader. If the reader's size changes (which none of the
+    /// implementations currently do), then this should return how much data was *initially* in the
+    /// reader.
     fn size(&self) -> usize;
 
+    /// The initial offset of the [`BinReader`]. For more information, see the **Offsets** section
+    /// of the [`BinReader`] documentation.
     fn initial_offset(&self) -> usize;
 
+    /// The current offset of the reader's cursor.
     fn current_offset(&self) -> usize;
 
+    /// The endidness of the reader.
     fn endidness(&self) -> Endidness;
 
+    /// Sets the reader's internal cursor to be the specified offset.
     fn advance_to(&self, offset: usize) -> Result<()>;
 
-    fn advance_by(&self, num_bytes: usize) -> Result<()>;
+    /// Alters the position of the internal cursor by the given amount.
+    fn advance_by(&self, num_bytes: isize) -> Result<()>;
 
-    fn next_u8(&self) -> Result<u8> {
-        let byte = self.current_byte()?;
-        self.advance_by(1)?;
-        Ok(byte)
-    }
-
+    /// Returns a [`Bytes`] object of the requested size containing the next n bytes (where n is
+    /// the `num_bytes` parameter) and then advances the cursor by that much.
     fn next_n_bytes(&self, num_bytes: usize) -> Result<Bytes> {
         self.validate_offset(self.current_offset(), num_bytes)?;
         let start = self.current_offset() + self.initial_offset();
         let data = Bytes::copy_from_slice(&self.as_ref()[start..start + num_bytes]);
-        self.advance_by(num_bytes)?;
+        //FIXME account for possible overloading
+        self.advance_by(num_bytes as isize)?;
         Ok(data)
     }
 
     #[inline]
+    /// The lowest valid offset that can be requested. By default, this is the same as
+    /// [`BinReader::initial_offset`].
     fn lower_offset_limit(&self) -> usize {
         self.initial_offset()
     }
 
     #[inline]
+    /// The highest valid offset that can be requested. By default, this is the reader's
+    /// [`BinReader::size`] plus its [`BinReader::initial_offset`].
     fn upper_offset_limit(&self) -> usize {
         self.size() + self.initial_offset()
     }
 
     #[inline]
+    /// Checks whether or not there is any data left, based off of the
+    /// [`BinReader::current_offset`].
     fn is_empty(&self) -> bool {
         self.remaining() == 0
     }
 
     #[inline]
+    /// The amount of data left, based off of the [`BinReader::current_offset`].
     fn remaining(&self) -> usize {
         self.upper_offset_limit() - self.current_offset()
     }
 
+    /// A helper method that validates an offset (mostly used by reader implementations).
+    ///
+    /// If the offset is valid, then `Ok(())` will be returned. Otherwise, the appropriate
+    /// [`Error`] is returned (wrapped in `Err`, of course).
     fn validate_offset(&self, offset: usize, size: usize) -> Result<()> {
         if size > 0 && self.is_empty() {
             Err(Error::NoMoreData)
@@ -136,6 +220,8 @@ where
         }
     }
 
+    /// Takes an absolute offset and converts it to a relative offset, based off of the
+    /// [`BinReader::current_offset`].
     fn relative_offset(&self, abs_offset: usize) -> Result<usize> {
         self.validate_offset(abs_offset, 0)?;
         Ok(abs_offset - self.current_offset())
@@ -150,6 +236,8 @@ where
         Ok(prefix.iter().zip(buf.into_iter()).all(|(v1, v2)| *v1 == v2))
     }
 
+    /// Fills the provided buffer with bytes, starting at the provided offset. This does not alter
+    /// the [`BinReader::current_offset`].
     fn bytes_at(&self, offset: usize, buf: &mut [u8]) -> Result<()> {
         self.validate_offset(offset, buf.len())?;
         for i in 0..buf.len() {
@@ -158,14 +246,21 @@ where
         Ok(())
     }
 
+    /// Returns a subsequence (i.e. a `&[u8]`) of data of the requested size beginning at the
+    /// provided offset.
     fn subseq(&self, offset: usize, num_bytes: usize) -> Result<&[u8]> {
+        self.validate_offset(offset, num_bytes)?;
         self.range(offset, offset + num_bytes)
     }
 
+    /// Returns a slice of the data between the provided starting and ending offsets.
     fn range(&self, start: usize, end: usize) -> Result<&[u8]> {
+        self.validate_offset(start, end - start)?;
         Ok(&self.as_ref()[start..end])
     }
 
+    /// Fills the provided buffer with the next n bytes, where n is the length of the buffer. This
+    /// then advances the [`BinReader::current_offset`] by n.
     fn next_bytes(&self, buf: &mut [u8]) -> Result<()> {
         for i in 0..buf.len() {
             buf[i] = self.next_u8()?;
@@ -173,16 +268,32 @@ where
         Ok(())
     }
 
-    fn current_byte(&self) -> Result<u8> {
+    /// Gets the [`u8`] at the [`BinReader::current_offset`] without altering the
+    /// [`BinReader::current_offset`].
+    fn current_u8(&self) -> Result<u8> {
         self.u8_at(self.current_offset())
     }
 
+    //TODO current, non-endian implementations.
+    make_number_methods! {
+        /// Gets the numendlong endian `numname` at the [`BinReader::current_offset`] without
+        /// altering the [`BinReader::current_offset`].
+        fn current_numname_numend(&self) -> Result<_numname_> {
+            let mut buf = [0; _numwidth_];
+            self.bytes_at(self.current_offset(), &mut buf)?;
+            Ok(_numname_::from_numend_bytes(buf))
+        }
+    }
+
+    /// Gets the `u8` at the provided offset without altering the [`BinReader::current_offset`].
     fn u8_at(&self, offset: usize) -> Result<u8> {
         self.validate_offset(offset, 0)?;
         Ok(self.as_ref()[offset - self.initial_offset()])
     }
 
     make_number_methods! {
+        /// Gets the numendlong endian `numname` at the provided offset without altering the
+        /// [`BinReader::current_offset`].
         fn numname_numend_at(&self, offset: usize) -> Result<_numname_> {
             let mut buf = [0; _numwidth_];
             self.bytes_at(offset, &mut buf)?;
@@ -190,6 +301,9 @@ where
         }
     }
 
+    /// Gets the `u16` using the default endidness at the provided offset without altering the
+    /// [`BinReader::current_offset`]. If the current endidness is [`Endidness::Unknown`], then an
+    /// error is returned.
     fn u16_at(&self, offset: usize) -> Result<u16> {
         match self.endidness() {
             Endidness::Big => self.u16_be_at(offset),
@@ -198,6 +312,9 @@ where
         }
     }
 
+    /// Gets the `u32` using the default endidness at the provided offset without altering the
+    /// [`BinReader::current_offset`]. If the current endidness is [`Endidness::Unknown`], then an
+    /// error is returned.
     fn u32_at(&self, offset: usize) -> Result<u32> {
         match self.endidness() {
             Endidness::Big => self.u32_be_at(offset),
@@ -206,6 +323,9 @@ where
         }
     }
 
+    /// Gets the `u64` using the default endidness at the provided offset without altering the
+    /// [`BinReader::current_offset`]. If the current endidness is [`Endidness::Unknown`], then an
+    /// error is returned.
     fn u64_at(&self, offset: usize) -> Result<u64> {
         match self.endidness() {
             Endidness::Big => self.u64_be_at(offset),
@@ -214,6 +334,9 @@ where
         }
     }
 
+    /// Gets the `u128` using the default endidness at the provided offset without altering the
+    /// [`BinReader::current_offset`]. If the current endidness is [`Endidness::Unknown`], then an
+    /// error is returned.
     fn u128_at(&self, offset: usize) -> Result<u128> {
         match self.endidness() {
             Endidness::Big => self.u128_be_at(offset),
@@ -222,6 +345,9 @@ where
         }
     }
 
+    /// Gets the `i16` using the default endidness at the provided offset without altering the
+    /// [`BinReader::current_offset`]. If the current endidness is [`Endidness::Unknown`], then an
+    /// error is returned.
     fn i16_at(&self, offset: usize) -> Result<i16> {
         match self.endidness() {
             Endidness::Big => self.i16_be_at(offset),
@@ -230,6 +356,9 @@ where
         }
     }
 
+    /// Gets the `i32` using the default endidness at the provided offset without altering the
+    /// [`BinReader::current_offset`]. If the current endidness is [`Endidness::Unknown`], then an
+    /// error is returned.
     fn i32_at(&self, offset: usize) -> Result<i32> {
         match self.endidness() {
             Endidness::Big => self.i32_be_at(offset),
@@ -238,6 +367,9 @@ where
         }
     }
 
+    /// Gets the `i64` using the default endidness at the provided offset without altering the
+    /// [`BinReader::current_offset`]. If the current endidness is [`Endidness::Unknown`], then an
+    /// error is returned.
     fn i64_at(&self, offset: usize) -> Result<i64> {
         match self.endidness() {
             Endidness::Big => self.i64_be_at(offset),
@@ -246,6 +378,9 @@ where
         }
     }
 
+    /// Gets the `i128` using the default endidness at the provided offset without altering the
+    /// [`BinReader::current_offset`]. If the current endidness is [`Endidness::Unknown`], then an
+    /// error is returned.
     fn i128_at(&self, offset: usize) -> Result<i128> {
         match self.endidness() {
             Endidness::Big => self.i128_be_at(offset),
@@ -254,13 +389,16 @@ where
         }
     }
 
-    fn next_i8(&self) -> Result<i8> {
-        let mut buf = [0; 1];
-        self.next_bytes(&mut buf)?;
-        Ok(i8::from_be_bytes(buf))
+    /// Gets the current byte and then advances the cursor.
+    fn next_u8(&self) -> Result<u8> {
+        let byte = self.current_u8()?;
+        self.advance_by(1)?;
+        Ok(byte)
     }
 
     make_number_methods! {
+        /// Gets the numendlong endian `numname` at the [`BinReader::current_offset`] and then
+        /// advances it by `1`.
         fn next_numname_numend(&self) -> Result<_numname_> {
             let mut buf = [0; _numwidth_];
             self.next_bytes(&mut buf)?;
@@ -268,6 +406,9 @@ where
         }
     }
 
+    /// Gets the `u16` using the default endidness at the [`BinReader::current_offset`] and then
+    /// advances it by `1`. If the current endidness is [`Endidness::Unknown`], then an error is
+    /// returned.
     fn next_u16(&self) -> Result<u16> {
         match self.endidness() {
             Endidness::Big => self.next_u16_be(),
@@ -276,6 +417,9 @@ where
         }
     }
 
+    /// Gets the `u16` using the default endidness at the [`BinReader::current_offset`] and then
+    /// advances it by `1`. If the current endidness is [`Endidness::Unknown`], then an error is
+    /// returned.
     fn next_u32(&self) -> Result<u32> {
         match self.endidness() {
             Endidness::Big => self.next_u32_be(),
@@ -284,6 +428,9 @@ where
         }
     }
 
+    /// Gets the `u16` using the default endidness at the [`BinReader::current_offset`] and then
+    /// advances it by `1`. If the current endidness is [`Endidness::Unknown`], then an error is
+    /// returned.
     fn next_u64(&self) -> Result<u64> {
         match self.endidness() {
             Endidness::Big => self.next_u64_be(),
@@ -292,6 +439,9 @@ where
         }
     }
 
+    /// Gets the `u16` using the default endidness at the [`BinReader::current_offset`] and then
+    /// advances it by `1`. If the current endidness is [`Endidness::Unknown`], then an error is
+    /// returned.
     fn next_u128(&self) -> Result<u128> {
         match self.endidness() {
             Endidness::Big => self.next_u128_be(),
@@ -300,6 +450,17 @@ where
         }
     }
 
+    /// Gets the `i8` at the [`BinReader::current_offset`] and then advances it by `1`. If the
+    /// current endidness is [`Endidness::Unknown`], then an error is returned.
+    fn next_i8(&self) -> Result<i8> {
+        let mut buf = [0; 1];
+        self.next_bytes(&mut buf)?;
+        Ok(i8::from_be_bytes(buf))
+    }
+
+    /// Gets the `i16` using the default endidness at the [`BinReader::current_offset`] and then
+    /// advances it by `1`. If the current endidness is [`Endidness::Unknown`], then an error is
+    /// returned.
     fn next_i16(&self) -> Result<i16> {
         match self.endidness() {
             Endidness::Big => self.next_i16_be(),
@@ -308,6 +469,9 @@ where
         }
     }
 
+    /// Gets the `i32` using the default endidness at the [`BinReader::current_offset`] and then
+    /// advances it by `1`. If the current endidness is [`Endidness::Unknown`], then an error is
+    /// returned.
     fn next_i32(&self) -> Result<i32> {
         match self.endidness() {
             Endidness::Big => self.next_i32_be(),
@@ -316,6 +480,9 @@ where
         }
     }
 
+    /// Gets the `i64` using the default endidness at the [`BinReader::current_offset`] and then
+    /// advances it by `1`. If the current endidness is [`Endidness::Unknown`], then an error is
+    /// returned.
     fn next_i64(&self) -> Result<i64> {
         match self.endidness() {
             Endidness::Big => self.next_i64_be(),
@@ -324,6 +491,9 @@ where
         }
     }
 
+    /// Gets the `i128` using the default endidness at the [`BinReader::current_offset`] and then
+    /// advances it by `1`. If the current endidness is [`Endidness::Unknown`], then an error is
+    /// returned.
     fn next_i128(&self) -> Result<i128> {
         match self.endidness() {
             Endidness::Big => self.next_i128_be(),
@@ -333,6 +503,8 @@ where
     }
 }
 
+/// An implementor of [`OwnableBinReader`] owns the data contained within it. This means that they
+/// can be built from more from more source (such as a [`bytes::Bytes`] instance of a file.
 pub trait OwnableBinReader<'r>: BinReader<'r> {
     fn from_file_with_offset<P: AsRef<Path>>(
         path: P,
