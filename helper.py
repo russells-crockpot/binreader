@@ -21,10 +21,11 @@ def for_each_crate_cargo(func):
         res = func(data)
         if res:
             data = res
-        toml.dump(data, path)
+        with open(path, 'w') as f:
+            toml.dump(data, f)
 
 @cli.command('bump-versions')
-@click.argument('to-bump', default='patch',
+@click.argument('to-bump',
         type=click.Choice(['major', 'minor', 'patch', 'build', 'prerelease']))
 def bump_versions(to_bump):
     def _to_apply(data):

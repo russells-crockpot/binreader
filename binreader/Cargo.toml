@@ -1,32 +1,42 @@
 [package]
 name = "binreader"
-version = "0.1.0"
-authors = ["Brendan McGloin <stmonkeydoom@gmail.com>"]
+version = "0.2.0"
+authors = [ "Brendan McGloin <stmonkeydoom@gmail.com>",]
 edition = "2018"
 license = "MIT"
 description = "A helper library to make reading binary data more pleasant."
 homepage = "https://github.com/russells-crockpot/binreader"
 repository = "https://github.com/russells-crockpot/binreader"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 bytes = "1.0.1"
-bytesize = { version = "1.0.1", optional = true }
-fs3 = { version = "0.5.0", optional = true }
-memmap2 = { version = "0.3.0", optional = true }
-nom = { version = "6.1.2", optional = true }
 thiserror = "1.0.25"
-
-[dependencies.binreader-internal-macros]
-path = "../internal-macros"
-version = "0.1.0"
-
-[dependencies.binreader-macros]
-path = "../macros"
-version = "0.1.0"
 
 [features]
 default = []
-memmap = ["fs3", "memmap2"]
-nom-support = ["nom", "binreader-internal-macros/nom"]
+memmap = [ "fs3", "memmap2",]
+nom-support = [ "nom", "binreader-internal-macros/nom",]
+
+[dependencies.bytesize]
+version = "1.0.1"
+optional = true
+
+[dependencies.fs3]
+version = "0.5.0"
+optional = true
+
+[dependencies.memmap2]
+version = "0.3.0"
+optional = true
+
+[dependencies.nom]
+version = "6.1.2"
+optional = true
+
+[dependencies.binreader-internal-macros]
+path = "../internal-macros"
+version = "0.2.0"
+
+[dependencies.binreader-macros]
+path = "../macros"
+version = "0.2.0"

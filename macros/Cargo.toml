@@ -1,7 +1,7 @@
 [package]
 name = "binreader-macros"
-version = "0.1.0"
-authors = ["Brendan McGloin <stmonkeydoom@gmail.com>"]
+version = "0.2.0"
+authors = [ "Brendan McGloin <stmonkeydoom@gmail.com>",]
 edition = "2018"
 license = "MIT"
 description = "Proc macros used by/for binreader."
@@ -15,5 +15,7 @@ proc-macro = true
 lazy_static = "1.4.0"
 proc-macro2 = "1.0.27"
 quote = "1.0.9"
-syn = { version = "1.0.73", features = ["full"] }
 
+[dependencies.syn]
+version = "1.0.73"
+features = [ "full",]
