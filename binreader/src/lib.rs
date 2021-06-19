@@ -169,13 +169,19 @@ where
 
     /// Returns a [`Bytes`] object of the requested size containing the next n bytes (where n is
     /// the `num_bytes` parameter) and then advances the cursor by that much.
-    fn next_n_bytes(&self, num_bytes: usize) -> Result<Bytes> {
+    fn next_n_bytes(&self, num_bytes: usize) -> Result<&[u8]> {
         self.validate_offset(self.current_offset(), num_bytes)?;
-        let start = self.current_offset() + self.initial_offset();
-        let data = Bytes::copy_from_slice(&self.as_ref()[start..start + num_bytes]);
-        //FIXME account for possible overloading
+        let start = self.current_offset() - self.initial_offset();
+        let data = &self.as_ref()[start..start + num_bytes];
         self.advance_by(num_bytes as isize)?;
         Ok(data)
+    }
+
+    #[inline]
+    /// Gets a pointer to a slice of the byte at the [`BinReader::current_offset`], as well as all
+    /// all bytes afterwards. This does not alter the [`BinReader::current_offset`].
+    fn get_remaining(&self) -> Result<&[u8]> {
+        self.range(self.current_offset(), self.upper_offset_limit())
     }
 
     #[inline]
@@ -507,7 +513,7 @@ where
 }
 
 /// An implementor of [`OwnableBinReader`] owns the data contained within it. This means that they
-/// can be built from more from more source (such as a [`bytes::Bytes`] instance of a file.
+/// can be built from more from more source (such as a [`bytes::Bytes`] instance or a file.
 pub trait OwnableBinReader<'r>: BinReader<'r> {
     fn from_file_with_offset<P: AsRef<Path>>(
         path: P,

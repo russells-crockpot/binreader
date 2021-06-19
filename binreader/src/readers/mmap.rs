@@ -90,9 +90,9 @@ impl<'r> BinReader<'r> for MmapBinReader {
         Ok(())
     }
 
-    fn advance_by(&self, bytes: isize) -> Result<()> {
-        self.validate_offset((self.position.get() as isize + bytes) as usize, 0)?;
-        self.adj_pos(bytes);
+    fn advance_by(&self, num_bytes: isize) -> Result<()> {
+        self.validate_offset((self.current_offset() as isize + num_bytes) as usize, 0)?;
+        self.adj_pos(num_bytes);
         Ok(())
     }
 
@@ -157,20 +157,5 @@ add_all_noms! { MmapBinReader }
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing;
-
-    #[test]
-    fn basic_test() {
-        testing::basic_test_1::<MmapBinReader>();
-    }
-
-    #[test]
-    fn basic_le_test() {
-        testing::basic_le_test::<MmapBinReader>();
-    }
-
-    #[test]
-    fn basic_be_test() {
-        testing::basic_be_test::<MmapBinReader>();
-    }
+    test_reader! { MmapBinReader }
 }

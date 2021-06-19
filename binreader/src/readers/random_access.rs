@@ -46,6 +46,11 @@ impl<'r> BinReader<'r> for RandomAccessBinReader {
     }
 
     #[inline]
+    fn get_remaining(&self) -> Result<&[u8]> {
+        Ok(&self.data[self.position.get()..])
+    }
+
+    #[inline]
     fn initial_offset(&self) -> usize {
         self.initial_offset
     }
@@ -82,13 +87,13 @@ impl<'r> BinReader<'r> for RandomAccessBinReader {
 
     fn advance_to(&self, offset: usize) -> Result<()> {
         self.validate_offset(offset, 0)?;
-        self.position.replace(offset);
+        self.position.replace(offset - self.initial_offset);
         Ok(())
     }
 
-    fn advance_by(&self, bytes: isize) -> Result<()> {
-        self.validate_offset((self.position.get() as isize + bytes) as usize, 0)?;
-        self.adj_pos(bytes);
+    fn advance_by(&self, num_bytes: isize) -> Result<()> {
+        self.validate_offset((self.current_offset() as isize + num_bytes) as usize, 0)?;
+        self.adj_pos(num_bytes);
         Ok(())
     }
 
@@ -96,14 +101,6 @@ impl<'r> BinReader<'r> for RandomAccessBinReader {
         self.validate_offset(self.current_offset(), 1)?;
         self.adj_pos(1);
         Ok(self.data.as_ref()[self.position.get() - 1])
-    }
-
-    fn next_n_bytes(&self, num_bytes: usize) -> Result<Bytes> {
-        self.validate_offset(self.current_offset(), num_bytes)?;
-        self.adj_pos(num_bytes as isize);
-        Ok(self
-            .data
-            .slice(self.current_offset()..self.current_offset() + num_bytes))
     }
 }
 
@@ -140,20 +137,6 @@ add_all_noms! { RandomAccessBinReader }
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing;
 
-    #[test]
-    fn basic_test() {
-        testing::basic_test_1::<RandomAccessBinReader>();
-    }
-
-    #[test]
-    fn basic_le_test() {
-        testing::basic_le_test::<RandomAccessBinReader>();
-    }
-
-    #[test]
-    fn basic_be_test() {
-        testing::basic_be_test::<RandomAccessBinReader>();
-    }
+    test_reader! { RandomAccessBinReader }
 }

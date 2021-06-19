@@ -46,6 +46,11 @@ where
     }
 
     #[inline]
+    fn get_remaining(&self) -> Result<&[u8]> {
+        Ok(&self.data[self.position.get()..])
+    }
+
+    #[inline]
     fn initial_offset(&self) -> usize {
         self.initial_offset
     }
@@ -77,12 +82,12 @@ where
 
     fn advance_to(&self, offset: usize) -> Result<()> {
         self.validate_offset(offset, 0)?;
-        self.position.replace(offset);
+        self.position.replace(offset - self.initial_offset);
         Ok(())
     }
 
     fn advance_by(&self, num_bytes: isize) -> Result<()> {
-        self.validate_offset((self.position.get() as isize + num_bytes) as usize, 0)?;
+        self.validate_offset((self.current_offset() as isize + num_bytes) as usize, 0)?;
         self.adj_pos(num_bytes);
         Ok(())
     }
@@ -109,22 +114,23 @@ pub trait SliceableBinReader<'r>: BinReader<'r> {
 
     #[inline]
     fn next_n_bytes_as_reader(&self, num_bytes: usize) -> Result<SliceRefBinReader> {
-        SliceRefBinReader::from_slice(
+        let res = SliceRefBinReader::from_slice(
             self.subseq(self.current_offset(), num_bytes)?,
             self.endidness(),
-        )
+        )?;
+        self.advance_by(num_bytes as isize)?;
+        Ok(res)
     }
 
     #[inline]
-    fn next_n_bytes_as_reader_retain_offset(
-        &mut self,
-        num_bytes: usize,
-    ) -> Result<SliceRefBinReader> {
-        SliceRefBinReader::from_slice_with_offset(
+    fn next_n_bytes_as_reader_retain_offset(&self, num_bytes: usize) -> Result<SliceRefBinReader> {
+        let res = SliceRefBinReader::from_slice_with_offset(
             self.subseq(self.current_offset(), num_bytes)?,
             self.current_offset(),
             self.endidness(),
-        )
+        )?;
+        self.advance_by(num_bytes as isize)?;
+        Ok(res)
     }
 
     #[inline]
@@ -150,20 +156,5 @@ pub trait SliceableBinReader<'r>: BinReader<'r> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing;
-
-    #[test]
-    fn basic_ref_test() {
-        testing::basic_test_1::<SliceRefBinReader>();
-    }
-
-    #[test]
-    fn basic_le_ref_test() {
-        testing::basic_le_test::<SliceRefBinReader>();
-    }
-
-    #[test]
-    fn basic_be_ref_test() {
-        testing::basic_be_test::<SliceRefBinReader>();
-    }
+    test_reader! { SliceRefBinReader }
 }
