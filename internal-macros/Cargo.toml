@@ -1,12 +1,13 @@
 [package]
 name = "binreader-internal-macros"
-version = "0.2.0"
+version = "0.2.1"
 authors = [ "Brendan McGloin <stmonkeydoom@gmail.com>",]
 edition = "2018"
 license = "MIT"
 description = "Internal macros used by binreader."
 homepage = "https://github.com/russells-crockpot/binreader"
 repository = "https://github.com/russells-crockpot/binreader"
+documentation = "https://docs.rs/binreader-internal-macros/"
 
 [dependencies.nom]
 version = "6.1.2"

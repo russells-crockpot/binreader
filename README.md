@@ -19,3 +19,5 @@ As of right now, BinReader only has two feature flags:
   BinReaders.
 - `memmap` which supports platform-independent memory mapped files (via the
   [memmap2](https://github.com/RazrFalcon/memmap2-rs) crate).
+
+**NOTE**: This is still a WIP.
