@@ -23,7 +23,7 @@
 #![allow(clippy::needless_range_loop)]
 use binreader_macros::make_number_methods;
 use bytes::Bytes;
-use std::{io, path::Path};
+use std::{borrow::Borrow, io, path::Path};
 
 // Needed for some macros to work in this package.
 #[allow(unused_imports)]
@@ -102,7 +102,7 @@ pub type Result<V> = std::result::Result<V, Error>;
 /// of zero to whatever the initial_offset is.
 /// For example:
 ///
-/// ```
+/// ```ignore
 /// let test_data = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05];
 /// let reader = RandomAccessBinReader::from_slice_with_offset(&test_data, 100, Endidness::Big);
 /// assert_eq!(reader.u8_at(100).unwrap(), 0);
@@ -113,7 +113,7 @@ pub type Result<V> = std::result::Result<V, Error>;
 /// One thing you may have noticed is that we had to unwrap the value. Most of a [`BinReader`]'s
 /// methods first check to make sure the provided offset is valid. For example:
 ///
-/// ```
+/// ```ignore
 /// assert!(matches!(reader.u8_at(99), Err(Error::OffsetTooSmall(99))));
 /// ```
 ///
@@ -126,7 +126,7 @@ pub type Result<V> = std::result::Result<V, Error>;
 /// what the highest valid offset is.
 pub trait BinReader<'r>
 where
-    Self: Sized + AsRef<[u8]>,
+    Self: Sized + AsRef<[u8]> + Borrow<[u8]> + io::Read + io::BufRead,
 {
     /// Generates a new [`BinReader`] using the provided slice, initial offset, and endidness. While
     /// the exact implementation of this varies from implementation to implementation,
@@ -158,10 +158,13 @@ where
     /// The endidness of the reader.
     fn endidness(&self) -> Endidness;
 
-    /// Sets the reader's internal cursor to be the specified offset.
+    /// Changes the default endidness.
+    fn change_endidness(&mut self, endidness: Endidness);
+
+    /// Sets the reader's [`BinReader::current_offset`].
     fn advance_to(&self, offset: usize) -> Result<()>;
 
-    /// Alters the position of the internal cursor by the given amount.
+    /// Alters the [`BinReader::current_offset`] by the given amount.
     fn advance_by(&self, num_bytes: isize) -> Result<()>;
 
     /// Returns a [`Bytes`] object of the requested size containing the next n bytes (where n is

@@ -75,6 +75,11 @@ impl<'r> BinReader<'r> for MmapBinReader {
     }
 
     #[inline]
+    fn change_endidness(&mut self, endidness: Endidness) {
+        self.endidness = endidness
+    }
+
+    #[inline]
     fn initial_offset(&self) -> usize {
         self.initial_offset
     }

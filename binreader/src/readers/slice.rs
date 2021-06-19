@@ -70,6 +70,11 @@ where
         self.endidness
     }
 
+    #[inline]
+    fn change_endidness(&mut self, endidness: Endidness) {
+        self.endidness = endidness
+    }
+
     fn advance_to(&self, offset: usize) -> Result<()> {
         self.validate_offset(offset, 0)?;
         self.position.replace(offset);
