@@ -1,4 +1,4 @@
-use crate::{BinReader, Endidness, OwnableBinReader, Result, SliceableBinReader};
+use crate::{BinReader, Endidness, OwnableBinReader, Result};
 use bytes::Bytes;
 use fs3::FileExt as _;
 use memmap2::{Mmap, MmapMut};
@@ -143,8 +143,6 @@ impl<'r> OwnableBinReader<'r> for MmapBinReader {
         Self::from_slice_with_offset(&bytes, initial_offset, endidness)
     }
 }
-
-impl<'r> SliceableBinReader<'r> for MmapBinReader {}
 
 add_read! { MmapBinReader }
 add_borrow! { MmapBinReader }

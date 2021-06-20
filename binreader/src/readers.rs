@@ -2,7 +2,7 @@ mod random_access;
 mod slice;
 
 pub use random_access::RandomAccessBinReader;
-pub use slice::{SliceRefBinReader, SliceableBinReader};
+pub use slice::SliceRefBinReader;
 
 #[cfg(feature = "memmap")]
 mod mmap;

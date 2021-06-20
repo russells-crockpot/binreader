@@ -23,7 +23,7 @@ macro_rules! test_reader {
 
         #[test]
         fn test_sliceable_retain_offset() {
-            crate::testing::test_sliceable_retain_offset::<$reader>();
+            crate::testing::test_sliced_retain_offset::<$reader>();
         }
 
         #[test]

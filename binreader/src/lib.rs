@@ -510,6 +510,49 @@ where
             Endidness::Unknown => Err(Error::UnknownEndidness),
         }
     }
+
+    #[inline]
+    fn slice_reader(&self, start: usize, end: usize) -> Result<SliceRefBinReader> {
+        SliceRefBinReader::from_slice(self.range(start, end)?, self.endidness())
+    }
+
+    fn next_n_bytes_as_reader(&self, num_bytes: usize) -> Result<SliceRefBinReader> {
+        let res = SliceRefBinReader::from_slice(
+            self.subseq(self.current_offset(), num_bytes)?,
+            self.endidness(),
+        )?;
+        self.advance_by(num_bytes as isize)?;
+        Ok(res)
+    }
+
+    fn next_n_bytes_as_reader_retain_offset(&self, num_bytes: usize) -> Result<SliceRefBinReader> {
+        let res = SliceRefBinReader::from_slice_with_offset(
+            self.subseq(self.current_offset(), num_bytes)?,
+            self.current_offset(),
+            self.endidness(),
+        )?;
+        self.advance_by(num_bytes as isize)?;
+        Ok(res)
+    }
+
+    #[inline]
+    fn slice_reader_with_offset(
+        &self,
+        start: usize,
+        offset: usize,
+        end: usize,
+    ) -> Result<SliceRefBinReader> {
+        SliceRefBinReader::from_slice_with_offset(self.range(start, end)?, offset, self.endidness())
+    }
+
+    #[inline]
+    fn slice_reader_retain_offset(&self, start: usize, end: usize) -> Result<SliceRefBinReader> {
+        SliceRefBinReader::from_slice_with_offset(
+            self.range(start, end)?,
+            self.current_offset(),
+            self.endidness(),
+        )
+    }
 }
 
 /// An implementor of [`OwnableBinReader`] owns the data contained within it. This means that they

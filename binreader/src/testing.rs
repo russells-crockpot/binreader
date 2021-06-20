@@ -1,4 +1,4 @@
-use super::{BinReader, Endidness, SliceableBinReader};
+use super::{BinReader, Endidness};
 
 pub(crate) const TEST_DATA: [u8; 16] = [
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -135,7 +135,7 @@ pub(crate) fn basic_be_test<'r, B: BinReader<'r>>() {
     assert_eq!(BE_U128_DATA, reader.next_u128().unwrap());
 }
 
-pub(crate) fn test_sliceable_retain_offset<'r, B: SliceableBinReader<'r>>() {
+pub(crate) fn test_sliced_retain_offset<'r, B: BinReader<'r>>() {
     let base_reader = B::from_slice(&TEST_DATA, Endidness::Big).unwrap();
     base_reader.advance_to(0x03).unwrap();
     let sliced_reader = base_reader.next_n_bytes_as_reader_retain_offset(5).unwrap();

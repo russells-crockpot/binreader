@@ -1,6 +1,4 @@
-use crate::{
-    util::bytes_from_file, BinReader, Endidness, OwnableBinReader, Result, SliceableBinReader,
-};
+use crate::{util::bytes_from_file, BinReader, Endidness, OwnableBinReader, Result};
 use bytes::Bytes;
 use std::{cell::Cell, path::Path};
 
@@ -123,8 +121,6 @@ impl<'r> OwnableBinReader<'r> for RandomAccessBinReader {
         Ok(Self::new(bytes, initial_offset, endidness))
     }
 }
-
-impl<'r> SliceableBinReader<'r> for RandomAccessBinReader {}
 
 add_read! { RandomAccessBinReader }
 add_borrow! { RandomAccessBinReader }
