@@ -89,11 +89,7 @@ pub type Result<V> = std::result::Result<V, Error>;
 /// While not required, most [`BinReader`]s should implement the [`std::io::Read`],
 /// [`std::io::Seek`], [`std::io::BufRead`], and ``std::borrow::Borrow<&[u8]>`` traits.
 ///
-/// Additionally, there are two sub-traits of [`BinReader`]:
-///
-/// - [`OwnableBinReader`] which owns the data contained within it.
-/// - [`SliceableBinReader`] which allows you to easily create [`SliceRefBinReader`]s from another
-///   reader.
+/// Additionally, there's the [`OwnableBinReader`] subtrait which owns the data contained within it.
 ///
 /// # Offsets
 ///
